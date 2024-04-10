@@ -1,0 +1,167 @@
+-- 1. What is the overall cancellation rate for hotel bookings?
+
+SELECT ROUND(100.0 * SUM(CASE
+                             WHEN is_canceled = 1 THEN 1
+                             ELSE 0
+                         END) / COUNT(*), 2) AS cancellation_rate
+FROM bookings;
+
+-- 2. Which countries are the top contributors to hotel bookings?
+
+SELECT country,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY country
+ORDER BY booking_count DESC
+LIMIT 5;
+
+-- 3. What are the main market segments booking the hotels, such as leisure or corporate?
+
+SELECT market_segment,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY market_segment
+ORDER BY booking_count DESC;
+
+-- 4. Is there a relationship between deposit type (e.g., non-refundable, refundable) and the likelihood of cancellation?
+
+SELECT deposit_type,
+       ROUND(100.0 * SUM(CASE
+                             WHEN is_canceled = 1 THEN 1
+                             ELSE 0
+                         END) / COUNT(*), 2) AS cancellation_rate
+FROM bookings
+GROUP BY deposit_type;
+
+-- 5. How long do guests typically stay in hotels on average?
+
+SELECT ROUND(AVG(JULIANDAY(checkout_date) - JULIANDAY(checkin_date)), 2) AS avg_stay_duration
+FROM bookings;
+
+-- 6. What meal options (e.g., breakfast included, half-board) are most preferred by guests?
+
+SELECT meal,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY meal
+ORDER BY booking_count DESC;
+
+-- 7. Do bookings made through agents exhibit different cancellation rates or booking durations compared to direct bookings?
+ -- To compare cancellation rates between agent and direct bookings:
+
+SELECT is_agent,
+       ROUND(100.0 * SUM(CASE
+                             WHEN is_canceled = 1 THEN 1
+                             ELSE 0
+                         END) / COUNT(*), 2) AS cancellation_rate
+FROM bookings
+GROUP BY is_agent;
+
+-- To compare booking durations:
+
+SELECT is_agent,
+       ROUND(AVG(JULIANDAY(checkout_date) - JULIANDAY(checkin_date)), 2) AS avg_stay_duration
+FROM bookings
+GROUP BY is_agent;
+
+--8. How do prices vary across different hotels and room types? Are there any seasonal pricing trends?
+
+SELECT property_id,
+       room_type,
+       AVG(price) AS avg_price
+FROM bookings
+GROUP BY property_id,
+         room_type
+ORDER BY avg_price DESC;
+
+-- 9. What percentage of bookings require car parking spaces, and does this vary by hotel location or other factors?
+ -- To get the percentage of bookings requiring car parking:
+
+SELECT ROUND(100.0 * SUM(CASE
+                             WHEN requires_car_parking = 1 THEN 1
+                             ELSE 0
+                         END) / COUNT(*), 2) AS pct_require_parking
+FROM bookings;
+
+-- To see if it varies by hotel location (assuming you have a 'property_location' column):
+
+SELECT property_location,
+       ROUND(100.0 * SUM(CASE
+                             WHEN requires_car_parking = 1 THEN 1
+                             ELSE 0
+                         END) / COUNT(*), 2) AS pct_require_parking
+FROM bookings
+GROUP BY property_location;
+
+-- 10. What are the main reservation statuses (e.g., confirmed, canceled, checked-in), and how do they change over time?
+ -- To get the counts of each reservation status:
+
+SELECT reservation_status,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY reservation_status
+ORDER BY booking_count DESC;
+
+-- To see how the statuses change over time (e.g., by month):
+
+SELECT DATE_TRUNC('month', booking_date) AS booking_month,
+       reservation_status,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY booking_month,
+         reservation_status
+ORDER BY booking_month,
+         reservation_status;
+
+-- 11. What is the distribution of guests based on the number of adults, children, and stays on weekend nights?
+ -- For the number of adults and children:
+
+SELECT num_adults,
+       num_children,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY num_adults,
+         num_children
+ORDER BY booking_count DESC;
+
+-- For stays on weekend nights (assuming 'is_weekend_night' is a column):
+
+SELECT is_weekend_night,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY is_weekend_night;
+
+-- 12. Which email domains are most commonly used for making hotel bookings?
+
+SELECT REGEXP_REPLACE(email, '^[^@]+@', '') AS email_domain,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY email_domain
+ORDER BY booking_count DESC;
+
+-- 13. Are there any frequently occurring names in hotel bookings, and do they exhibit any specific booking patterns?
+
+SELECT guest_name,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY guest_name
+ORDER BY booking_count DESC
+LIMIT 10;
+
+-- 14. Which market segments contribute the most revenue to the hotels?
+
+SELECT market_segment,
+       SUM(price) AS total_revenue
+FROM bookings
+GROUP BY market_segment
+ORDER BY total_revenue DESC;
+
+-- 15. How do booking patterns vary across different seasons or months of the year?
+
+SELECT DATE_TRUNC('month', booking_date) AS booking_month,
+       COUNT(*) AS booking_count
+FROM bookings
+GROUP BY booking_month
+ORDER BY booking_month;
+
+-- END
